@@ -1,2 +1,2 @@
-This is our hackorbit hackathon project.
-FinAvengers Let's get started.
+Team Name: FinAvengers
+Project Name: FinQuest – A Gamified Personal Finance Tracker
