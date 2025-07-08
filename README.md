@@ -54,3 +54,6 @@ UNIQUE VALUES OF FinQuest:
 5️⃣1Highly Engaging: XP, badges, streaks, and challenges boost retention.
 
 "With FinQuest, personal finance isn’t boring anymore — it’s a game you actually want to win!"
+
+🔸FOR DESIGN OR PROTOTYPE:
+[FIGMA DESIGN] https://www.figma.com/design/AEFCvoILPv4LWPBSKo03FT/FinQuest?node-id=1-7&t=4PjpyUubvfmLO8H6-0
