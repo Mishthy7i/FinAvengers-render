@@ -8,7 +8,7 @@ Future<void> _signup(
   Map<String, dynamic> userData,
 ) async {
   final response = await http.post(
-    Uri.parse('http://localhost:8000/auth/signup'),
+    Uri.parse('https://finavengers-render-1.onrender.com/auth/signup'),
     headers: {'Content-Type': 'application/json'},
     body: jsonEncode(userData),
   );

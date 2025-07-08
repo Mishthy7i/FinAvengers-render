@@ -25,3 +25,8 @@ resources
 - https://fastapi.tiangolo.com/tutorial/first-steps/
 - https://fastapi.tiangolo.com/tutorial/security/oauth2-jwt/
 - https://testdriven.io/blog/fastapi-jwt-auth/
+ 
+ 
+ ## Backend is hosted using render 
+ ### URL="https://finavengers-render-1.onrender.com"
+ ### Swagger="https://finavengers-render-1.onrender.com/docs"
