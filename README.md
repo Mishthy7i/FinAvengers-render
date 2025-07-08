@@ -1,5 +1,5 @@
-                                                                        🔷 Team Name: FinAvengers  🔷 
-                                                       🔷 Project Name: FinQuest – A Gamified Personal Finance Tracker 🔷 
+                                                            🔷 Team Name: FinAvengers  🔷 
+                                         🔷 Project Name: FinQuest – A Gamified Personal Finance Tracker 🔷 
 
 PROBLEM STATEMENT:
 📌Today’s youth face these problems:
