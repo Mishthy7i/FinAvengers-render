@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from db import init_db
-from routes import auth, transactions,chatbot,profile
+from routes import auth, transactions,chatbot,profile,sms
 app = FastAPI()
 
 app.add_middleware(
@@ -16,6 +16,7 @@ app.include_router(auth.router)
 app.include_router(transactions.router)
 app.include_router(chatbot.router)
 app.include_router(profile.router)
+app.include_router(sms.router)
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
