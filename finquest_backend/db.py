@@ -102,8 +102,8 @@ def init_db():
     cursor = db.cursor()
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS issued_badges (
-        badge_id INT,
-        id INT,
+        badge_id INT PRIMARY KEY,
+        id INT ,
         issued_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
     """)
