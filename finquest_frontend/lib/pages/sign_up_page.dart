@@ -1,7 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_jwt/pages/home_page.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:intl/intl.dart';
+
+class SpendingCategory {
+  final String name;
+  final IconData icon;
+  final Color color;
+  double amount;
+
+  SpendingCategory({
+    required this.name,
+    required this.icon,
+    required this.color,
+    this.amount = 0.0,
+  });
+}
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({Key? key}) : super(key: key);
@@ -50,7 +66,7 @@ class _SignUpPageState extends State<SignUpPage> {
     }
   }
 
-  Future<void> _signUp(BuildContext context) async {
+  Future<void> _signUpAndLogin(BuildContext context) async {
     if (!_formKey.currentState!.validate()) return;
 
     if (!_agreeToTerms) {
@@ -73,6 +89,7 @@ class _SignUpPageState extends State<SignUpPage> {
     });
 
     try {
+      // Step 1: Sign up the user
       final userData = {
         'username': _usernameController.text.trim(),
         'name': _nameController.text.trim(),
@@ -82,26 +99,51 @@ class _SignUpPageState extends State<SignUpPage> {
         'dob': _selectedDate!.toIso8601String().split('T')[0],
       };
 
-      final response = await http.post(
+      final signUpResponse = await http.post(
         Uri.parse('https://finavengers-render.onrender.com/auth/signup'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(userData),
       );
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Account created successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        Navigator.pop(context); // Go back to sign in
-      } else {
-        final errorData = jsonDecode(response.body);
+      if (signUpResponse.statusCode != 200 &&
+          signUpResponse.statusCode != 201) {
+        final errorData = jsonDecode(signUpResponse.body);
         setState(() {
           _errorMessage = errorData['message'] ?? 'Failed to create account';
         });
+        return;
       }
+
+      // Step 2: Log in the user
+      final loginData = {
+        'email': _emailController.text.trim(),
+        'password': _passwordController.text,
+      };
+
+      final loginResponse = await http.post(
+        Uri.parse('https://finavengers-render.onrender.com/auth/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(loginData),
+      );
+
+      if (loginResponse.statusCode != 200 && loginResponse.statusCode != 201) {
+        final errorData = jsonDecode(loginResponse.body);
+        setState(() {
+          _errorMessage = errorData['message'] ?? 'Failed to log in';
+        });
+        return;
+      }
+
+      final loginResponseData = jsonDecode(loginResponse.body);
+      final jwtToken = loginResponseData['token'];
+
+      // Step 3: Navigate to ProfileSetupPage with the JWT
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ProfileSetupPage(jwtToken: jwtToken),
+        ),
+      );
     } catch (e) {
       setState(() {
         _errorMessage = 'Network error. Please check your connection.';
@@ -428,7 +470,8 @@ class _SignUpPageState extends State<SignUpPage> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: _isLoading ? null : () => _signUp(context),
+                        onPressed:
+                            _isLoading ? null : () => _signUpAndLogin(context),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF4A90E2),
                           foregroundColor: Colors.white,
@@ -568,6 +611,519 @@ class _SignUpPageState extends State<SignUpPage> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _salaryController.dispose();
+    super.dispose();
+  }
+}
+
+class ProfileSetupPage extends StatefulWidget {
+  final String jwtToken;
+
+  const ProfileSetupPage({Key? key, required this.jwtToken}) : super(key: key);
+
+  @override
+  State<ProfileSetupPage> createState() => _ProfileSetupPageState();
+}
+
+class _ProfileSetupPageState extends State<ProfileSetupPage> {
+  final _formKey = GlobalKey<FormState>();
+  bool _isLoading = false;
+  String? _errorMessage;
+  String? _successMessage;
+
+  // Controllers for each category
+  final Map<String, TextEditingController> _controllers = {};
+
+  // Spending categories with default values
+  late List<SpendingCategory> _categories;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Initialize categories with default values
+    _categories = [
+      SpendingCategory(
+        name: 'Food',
+        icon: Icons.restaurant,
+        color: Colors.orange,
+        amount: 3000,
+      ),
+      SpendingCategory(
+        name: 'Travel',
+        icon: Icons.directions_car,
+        color: Colors.blue,
+        amount: 1000,
+      ),
+      SpendingCategory(
+        name: 'Shopping',
+        icon: Icons.shopping_bag,
+        color: Colors.pink,
+        amount: 5000,
+      ),
+      SpendingCategory(
+        name: 'Grocery',
+        icon: Icons.local_grocery_store,
+        color: Colors.green,
+        amount: 3000,
+      ),
+      SpendingCategory(
+        name: 'Personal',
+        icon: Icons.person,
+        color: Colors.purple,
+        amount: 1000,
+      ),
+      SpendingCategory(
+        name: 'Education',
+        icon: Icons.school,
+        color: Colors.indigo,
+        amount: 500,
+      ),
+      SpendingCategory(
+        name: 'Bills',
+        icon: Icons.receipt_long,
+        color: Colors.red,
+        amount: 700,
+      ),
+      SpendingCategory(
+        name: 'Other',
+        icon: Icons.more_horiz,
+        color: Colors.grey,
+        amount: 0,
+      ),
+    ];
+
+    // Initialize controllers with default values
+    for (var category in _categories) {
+      _controllers[category.name] = TextEditingController(
+        text: category.amount.toString(),
+      );
+    }
+  }
+
+  Future<void> _submitProfile() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+      _successMessage = null;
+    });
+
+    try {
+      // Prepare data for API
+      final profileData = {
+        'Food': double.tryParse(_controllers['Food']!.text) ?? 0.0,
+        'Travel': double.tryParse(_controllers['Travel']!.text) ?? 0.0,
+        'Shopping': double.tryParse(_controllers['Shopping']!.text) ?? 0.0,
+        'Grocery': double.tryParse(_controllers['Grocery']!.text) ?? 0.0,
+        'Personal': double.tryParse(_controllers['Personal']!.text) ?? 0.0,
+        'Education': double.tryParse(_controllers['Education']!.text) ?? 0.0,
+        'Bills': double.tryParse(_controllers['Bills']!.text) ?? 0.0,
+        'Other': double.tryParse(_controllers['Other']!.text) ?? 0.0,
+      };
+
+      // Include JWT token in the headers
+      final response = await http.post(
+        Uri.parse(
+          'https://finavengers-render.onrender.com/profile_build/create',
+        ),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${widget.jwtToken}',
+        },
+        body: jsonEncode(profileData),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        setState(() {
+          _successMessage = 'Profile created successfully!';
+        });
+
+        // Navigate to next screen after a delay
+        Future.delayed(const Duration(seconds: 2), () {
+          // Navigate to dashboard or home screen
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => HomePage()),
+          );
+        });
+      } else {
+        final errorData = jsonDecode(response.body);
+        setState(() {
+          _errorMessage = errorData['message'] ?? 'Failed to create profile';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Network error. Please check your connection.';
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  double _getTotalSpending() {
+    double total = 0;
+    for (var controller in _controllers.values) {
+      total += double.tryParse(controller.text) ?? 0;
+    }
+    return total;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.grey[50],
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.white,
+        title: const Text(
+          'Profile Setup',
+          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w600),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: Form(
+        key: _formKey,
+        child: Column(
+          children: [
+            // Header Section
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(24),
+                  bottomRight: Radius.circular(24),
+                ),
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4A90E2).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(40),
+                    ),
+                    child: const Icon(
+                      Icons.account_balance_wallet,
+                      size: 40,
+                      color: Color(0xFF4A90E2),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Set Your Monthly Budget',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Tell us how much you typically spend in each category to personalize your experience',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4A90E2).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.calculate,
+                          color: Color(0xFF4A90E2),
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Total: ₹${_getTotalSpending().toStringAsFixed(0)}',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF4A90E2),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Categories List
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: _categories.length,
+                itemBuilder: (context, index) {
+                  final category = _categories[index];
+                  return _buildCategoryCard(category);
+                },
+              ),
+            ),
+
+            // Bottom Section with Submit Button
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, -2),
+                  ),
+                ],
+              ),
+              child: SafeArea(
+                child: Column(
+                  children: [
+                    // Error/Success Messages
+                    if (_errorMessage != null) ...[
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        margin: const EdgeInsets.only(bottom: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: Colors.red.withOpacity(0.3),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.error_outline,
+                              color: Colors.red,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _errorMessage!,
+                                style: const TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+
+                    if (_successMessage != null) ...[
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        margin: const EdgeInsets.only(bottom: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: Colors.green.withOpacity(0.3),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.check_circle_outline,
+                              color: Colors.green,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _successMessage!,
+                                style: const TextStyle(
+                                  color: Colors.green,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+
+                    // Submit Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _submitProfile,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF4A90E2),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                        ),
+                        child:
+                            _isLoading
+                                ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
+                                    ),
+                                  ),
+                                )
+                                : const Text(
+                                  'Complete Profile Setup',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCategoryCard(SpendingCategory category) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Row(
+          children: [
+            // Category Icon
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: category.color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(category.icon, color: category.color, size: 24),
+            ),
+
+            const SizedBox(width: 16),
+
+            // Category Info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    category.name,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Monthly spending',
+                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            ),
+
+            // Amount Input
+            SizedBox(
+              width: 100,
+              child: TextFormField(
+                controller: _controllers[category.name],
+                keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                ],
+                textAlign: TextAlign.right,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+                decoration: InputDecoration(
+                  prefixText: '₹',
+                  prefixStyle: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: Colors.grey[300]!),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: Color(0xFF4A90E2)),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 12,
+                  ),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Required';
+                  }
+                  if (double.tryParse(value) == null) {
+                    return 'Invalid';
+                  }
+                  return null;
+                },
+                onChanged: (value) {
+                  setState(() {
+                    // Update total when any value changes
+                  });
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    for (var controller in _controllers.values) {
+      controller.dispose();
+    }
     super.dispose();
   }
 }

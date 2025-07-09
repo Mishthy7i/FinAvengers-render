@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
-  static const String _baseUrl = 'https://finavengers-render-1.onrender.com';
+  static const String _baseUrl = 'https://finavengers-render.onrender.com';
 
   Future<bool> login(String email, String password) async {
     final response = await http.post(

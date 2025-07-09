@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_jwt/services/auth_service.dart';
-//
 import 'package:flutter_jwt/tabs/dashboard.dart';
 import 'package:flutter_jwt/tabs/analytics.dart';
 import 'package:flutter_jwt/tabs/leaderboard.dart';
 import 'package:flutter_jwt/tabs/ledger.dart';
+import 'package:flutter_jwt/pages/chatbot.dart'; // Import ChatbotPage
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -56,9 +56,10 @@ class _HomePageState extends State<HomePage> {
           IconButton(
             icon: const Icon(Icons.smart_toy),
             onPressed: () {
-              // Handle robot icon tap
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('AI Assistant clicked')),
+              // Navigate to ChatbotPage
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ChatbotPage()),
               );
             },
           ),
@@ -80,7 +81,7 @@ class _HomePageState extends State<HomePage> {
             const DrawerHeader(
               decoration: BoxDecoration(color: Color(0xFF4A90E2)),
               child: Text(
-                'Username',
+                'Welcome to FinQuest',
                 style: TextStyle(color: Colors.white, fontSize: 20),
               ),
             ),

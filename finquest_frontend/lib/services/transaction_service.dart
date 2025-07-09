@@ -35,4 +35,19 @@ class TransactionService {
 
     return response.statusCode == 200;
   }
+
+  Future<Map<String, dynamic>> fetchProfile() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwt_token');
+
+    final response = await http.get(
+      Uri.parse('$_baseUrl/profile/'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+    throw Exception('Failed to fetch profile');
+  }
 }

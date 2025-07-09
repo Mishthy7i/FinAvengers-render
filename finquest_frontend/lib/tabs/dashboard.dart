@@ -12,11 +12,51 @@ class _DashboardPageState extends State<DashboardPage> {
   final TransactionService _transactionService = TransactionService();
   bool _isLoading = false; // To track loading state
 
+  Map<String, dynamic>? _profile;
+  double _totalExpenses = 0.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchProfile();
+    _fetchExpenses();
+  }
+
+  Future<void> _fetchProfile() async {
+    try {
+      final response = await _transactionService.fetchProfile();
+      setState(() {
+        _profile = response;
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Failed to fetch profile')));
+    }
+  }
+
+  Future<void> _fetchExpenses() async {
+    try {
+      final transactions = await _transactionService.fetchTransactions();
+      setState(() {
+        _totalExpenses = transactions
+            .where((transaction) => transaction['type'] == 'expense')
+            .fold(0.0, (sum, transaction) => sum + transaction['amount']);
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Failed to fetch expenses')));
+    }
+  }
+
   void _showAddTransactionModal(BuildContext context) {
     final _amountController = TextEditingController();
-    final _categoryController = TextEditingController();
-    final _modeController = TextEditingController();
     final _formKey = GlobalKey<FormState>();
+
+    String? _selectedCategory;
+    String? _selectedType;
+    String? _selectedMode;
 
     showDialog(
       context: context,
@@ -44,22 +84,91 @@ class _DashboardPageState extends State<DashboardPage> {
                         return null;
                       },
                     ),
-                    TextFormField(
-                      controller: _categoryController,
+                    DropdownButtonFormField<String>(
+                      value: _selectedCategory,
                       decoration: const InputDecoration(labelText: 'Category'),
+                      items: const [
+                        DropdownMenuItem(
+                          value: 'Travel',
+                          child: Text('Travel'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'Shopping',
+                          child: Text('Shopping'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'Grocery',
+                          child: Text('Grocery'),
+                        ),
+                        DropdownMenuItem(value: 'Food', child: Text('Food')),
+                        DropdownMenuItem(
+                          value: 'Personal',
+                          child: Text('Personal'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'Education',
+                          child: Text('Education'),
+                        ),
+                        DropdownMenuItem(value: 'Bills', child: Text('Bills')),
+                        DropdownMenuItem(value: 'Other', child: Text('Other')),
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedCategory = value;
+                        });
+                      },
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please enter a category';
+                          return 'Please select a category';
                         }
                         return null;
                       },
                     ),
-                    TextFormField(
-                      controller: _modeController,
-                      decoration: const InputDecoration(labelText: 'Mode'),
+                    DropdownButtonFormField<String>(
+                      value: _selectedType,
+                      decoration: const InputDecoration(labelText: 'Type'),
+                      items: const [
+                        DropdownMenuItem(
+                          value: 'expense',
+                          child: Text('Expense'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'income',
+                          child: Text('Income'),
+                        ),
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedType = value;
+                        });
+                      },
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please enter a mode';
+                          return 'Please select a type';
+                        }
+                        return null;
+                      },
+                    ),
+                    DropdownButtonFormField<String>(
+                      value: _selectedMode,
+                      decoration: const InputDecoration(labelText: 'Mode'),
+                      items: const [
+                        DropdownMenuItem(value: 'upi', child: Text('UPI')),
+                        DropdownMenuItem(value: 'cash', child: Text('Cash')),
+                        DropdownMenuItem(
+                          value: 'others',
+                          child: Text('Others'),
+                        ),
+                        DropdownMenuItem(value: 'card', child: Text('Card')),
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedMode = value;
+                        });
+                      },
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please select a mode';
                         }
                         return null;
                       },
@@ -88,8 +197,9 @@ class _DashboardPageState extends State<DashboardPage> {
                                 'amount':
                                     double.tryParse(_amountController.text) ??
                                     0.0,
-                                'category': _categoryController.text,
-                                'mode': _modeController.text,
+                                'category': _selectedCategory,
+                                'type': _selectedType,
+                                'mode': _selectedMode,
                               };
 
                               final success = await _transactionService
@@ -145,31 +255,99 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: const Padding(
-        padding: EdgeInsets.all(16.0),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
+              "Welcome, ${_profile?['name'] ?? 'User'}!",
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Expanded(
+                  child: Card(
+                    color: Colors.green[100],
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        children: [
+                          const Text(
+                            'Income',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            '₹${_profile?['salary'] ?? 0}',
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Card(
+                    color: Colors.red[100],
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        children: [
+                          const Text(
+                            'Expenses',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.red,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            '₹${_totalExpenses.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            const Text(
               "🏠 Dashboard",
               style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             Card(
               child: Padding(
-                padding: EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       "Welcome to FinQuest!",
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    SizedBox(height: 10),
-                    Text(
+                    const SizedBox(height: 10),
+                    const Text(
                       "Track your expenses, manage your budget, and achieve your financial goals.",
                       style: TextStyle(fontSize: 16),
                     ),
