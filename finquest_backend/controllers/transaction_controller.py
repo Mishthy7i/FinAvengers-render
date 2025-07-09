@@ -8,8 +8,8 @@ def add_transaction(user_id: int, transaction: AddTransactionRequest):
     cursor = conn.cursor()
     try:
         cursor.execute(
-            "INSERT INTO transactions (user_id, amount, category, mode, created_at) VALUES (%s, %s, %s, %s, %s)",
-            (user_id, transaction.amount, transaction.category, transaction.mode, datetime.now())
+            "INSERT INTO transactions (user_id, amount,category,type, mode, created_at) VALUES (%s, %s,%s, %s, %s, %s)",
+            (user_id, transaction.amount, transaction.category, transaction.type,transaction.mode, datetime.now())
         )
         conn.commit()
         
@@ -33,7 +33,7 @@ def get_user_transactions(user_id: int):
     try:
         # Fix: Add comma after user_id to make it a proper tuple
         cursor.execute(
-            "SELECT id, user_id, amount, category, mode, created_at FROM transactions WHERE user_id = %s ORDER BY created_at DESC",
+            "SELECT id, user_id, amount, category,type, mode, created_at FROM transactions WHERE user_id = %s ORDER BY created_at DESC",
             (user_id,)  # Note the comma after user_id
         )
         transactions = cursor.fetchall()
@@ -45,8 +45,9 @@ def get_user_transactions(user_id: int):
                 "user_id": transaction[1],
                 "amount": transaction[2],
                 "category": transaction[3],
-                "mode": transaction[4],
-                "created_at": transaction[5]
+                "type":transaction[4],
+                "mode": transaction[5],
+                "created_at": transaction[6]
             })
         
         return result

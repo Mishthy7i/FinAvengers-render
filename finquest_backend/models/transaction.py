@@ -5,12 +5,13 @@ class AddTransactionRequest(BaseModel):
     amount: float
     category: str
     mode: str
-
+    type:str
 class TransactionResponse(BaseModel):
     id: int
     user_id: int
     amount: float
     category: str
+    type:str
     mode: str
     created_at: datetime
 
