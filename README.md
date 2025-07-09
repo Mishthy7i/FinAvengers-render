@@ -51,7 +51,7 @@ UNIQUE VALUES OF FinQuest:
 2️⃣AI-Powered Insights: Personalized, intelligent advice.
 3️⃣Youth-Focused Design: Memes, emojis, dark mode, bright UI.
 4️⃣Social Motivation: Leaderboards & competitions.
-5️⃣1Highly Engaging: XP, badges, streaks, and challenges boost retention.
+5️⃣Highly Engaging: XP, badges, streaks, and challenges boost retention.
 
 "With FinQuest, personal finance isn’t boring anymore — it’s a game you actually want to win!"
 
