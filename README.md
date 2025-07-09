@@ -34,7 +34,7 @@ TECHNOLOGY STACK :
 3.Backend	FastAPI (Python)	API Logic, Gamification, JWT Auth
 4.Database	MySQL	Store User Data, Expenses, Streaks
 5.Authentication	JWT Tokens	Secure User Login (Instead of Firebase)
-6.AI Chatbot	OpenAI GPT-4	Budgeting Advice & Personalized Tips
+6.AI Chatbot	model mistralai for	Budgeting Advice & Personalized Tips
 7.UI/UX Design	Figma	App Wireframes & Design Prototyping
 
 HOW IT WORKS :
