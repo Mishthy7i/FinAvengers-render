@@ -9,7 +9,7 @@ A simple backend using FastAPI and MySQL
 3. install fastapi
    pip install -r requirements.txt
 4. start fastapi
-   fastify dev
+   fastapi dev
 
 we used DECIMAL(10, 2) datatype to store salary.
 
