@@ -120,7 +120,41 @@ def init_db():
     );
     """)
     db.commit()
-    print("======> Streaks table created")
+    print("======> available_badges table created")
     cursor.close()
 
+    cursor = db.cursor()
+    cursor.execute("SELECT COUNT(*) FROM available_badges;")
+    count = cursor.fetchone()[0]
+    cursor.close()
+
+    if count == 0:
+        cursor = db.cursor()
+        cursor.execute("""
+        INSERT INTO available_badges (badge_image, badge_desc, badge_url, badge_criteria) VALUES
+        ('badge_streak_3.png', 'Earned for maintaining a 3-day activity streak!', 'https://yourcdn.com/badges/streak3', 'streak >= 3'),
+        ('badge_streak_7.png', 'Awarded for a full week of consistent finance tracking!', 'https://yourcdn.com/badges/streak7', 'streak >= 7'),
+        ('badge_first_goal.png', 'Congrats on completing your first goal!', 'https://yourcdn.com/badges/firstgoal', 'goals_completed >= 1'),
+        ('badge_saver.png', 'Saved over ₹5,000 across categories. Smart spender!', 'https://yourcdn.com/badges/saver', 'total_saved >= 5000'),
+        ('badge_consistent_tracker.png', 'Logged transactions for 10 days in a row!', 'https://yourcdn.com/badges/consistent', 'days_active >= 10'),
+        ('badge_budget_master.png', 'Spent wisely within all budget categories this month.', 'https://yourcdn.com/badges/budgetmaster', 'all_categories_within_budget = TRUE'),
+        ('badge_goal_crusher.png', 'Completed 5 financial goals. You’re unstoppable!', 'https://yourcdn.com/badges/goalcrusher', 'goals_completed >= 5'),
+        ('badge_xp_level_5.png', 'Reached XP level 5. Leveling up in life!', 'https://yourcdn.com/badges/level5', 'xp_level >= 5'),
+        ('badge_upi_user.png', 'Used UPI for 10 transactions. Digital native!', 'https://yourcdn.com/badges/upiuser', 'upi_transactions >= 10'),
+        ('badge_first_transaction.png', 'Logged your very first transaction. Welcome aboard!', 'https://yourcdn.com/badges/firsttxn', 'transactions_count = 1');
+        """)
+        db.commit()
+        print("======> Sample badges inserted")
+        cursor.close()
+    else:
+        print("======> Badges already present, skipping insert")
+
+    db.commit()
+    print("======> Sample badges inserted")
+    cursor.close()
+
+    db.commit()
+    print("======> Streaks table created")
+    cursor.close()
+    
     db.close()
