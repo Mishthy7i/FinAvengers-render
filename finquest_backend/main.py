@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from db import init_db
-from routes import auth, transactions,chatbot,profile,sms,profile_build, goals, issued_batches, streaks
+from routes import auth, transactions,chatbot,profile,sms,profile_build, goals, issued_batches, streaks, available_badges
 
 
 app = FastAPI()
@@ -23,7 +23,7 @@ app.include_router(profile_build.router)
 app.include_router(goals.router)
 app.include_router(issued_batches.router)
 app.include_router(streaks.router)
-
+app.include_router(available_badges.router)
 
 @app.get("/")
 async def root():
