@@ -3,6 +3,16 @@ from models.auth import SignupRequest, SignupResponse, LoginRequest, LoginRespon
 from controllers.auth_controller import create_user, login_user
 from utils.auth_utils import jwt_bearer # verify_token to test each request with jet token
 
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+# from models.transaction import (
+#     AddTransactionRequest,
+#     TransactionResponse,
+#     AddTransactionResponse
+# )
+
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
 @router.post("/signup", response_model=SignupResponse)
