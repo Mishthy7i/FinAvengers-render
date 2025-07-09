@@ -21,11 +21,12 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Filter App',
+      debugShowCheckedModeBanner: false,
+      title: 'FinQuest 💰',
       theme: ThemeData(primarySwatch: Colors.blue),
-      home: isLoggedIn ? const HomePage() : const SplashPage(),
+      home: isLoggedIn ? const HomePage() : const OnboardingFlow(),
       routes: {
-        '/splash': (context) => const SplashPage(),
+        '/splash': (context) => const OnboardingFlow(),
         '/home': (context) => const HomePage(),
         '/sign_in': (context) => const SignInPage(),
         '/sign_up': (context) => const SignUpPage(),

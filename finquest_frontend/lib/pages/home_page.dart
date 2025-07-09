@@ -1,131 +1,131 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_jwt/services/auth_service.dart';
-import 'package:flutter_jwt/services/transaction_service.dart';
+//
+import 'package:flutter_jwt/tabs/dashboard.dart';
+import 'package:flutter_jwt/tabs/analytics.dart';
+import 'package:flutter_jwt/tabs/leaderboard.dart';
+import 'package:flutter_jwt/tabs/ledger.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  const HomePage({Key? key}) : super(key: key);
 
   @override
-  _HomePageState createState() => _HomePageState();
+  State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
-  final TransactionService _transactionService = TransactionService();
+  int _selectedIndex = 0;
   final AuthService _authService = AuthService();
-  List<Map<String, dynamic>> _transactions = [];
 
-  Future<void> _fetchTransactions() async {
-    try {
-      final transactions = await _transactionService.fetchTransactions();
-      setState(() {
-        _transactions = transactions;
-      });
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to fetch transactions')),
-      );
-    }
-  }
-
-  Future<void> _addTransaction(Map<String, dynamic> transactionData) async {
-    final success = await _transactionService.addTransaction(transactionData);
-    if (success) {
-      await _fetchTransactions();
-      Navigator.pop(context);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to add transaction')),
-      );
-    }
-  }
+  late final List<Widget> _pages;
 
   @override
   void initState() {
     super.initState();
-    _fetchTransactions();
+    _pages = [
+      const DashboardPage(),
+      const Analytics(),
+      const LeaderboardPage(),
+      const LedgerPage(),
+    ];
   }
+
+  void _onTabTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
       appBar: AppBar(
-        title: const Text('Home'),
+        title: const Text("FinQuest"),
+        centerTitle: true,
+        elevation: 2,
+        backgroundColor: const Color(0xFF4A90E2),
+        foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.menu),
+          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await _authService.logout();
-              Navigator.pushReplacementNamed(context, '/splash');
+            icon: const Icon(Icons.smart_toy),
+            onPressed: () {
+              // Handle robot icon tap
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('AI Assistant clicked')),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.notifications),
+            onPressed: () {
+              // Handle bell icon tap
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Notifications clicked')),
+              );
             },
           ),
         ],
-        automaticallyImplyLeading: false, // Disable back button
       ),
-      body: ListView.builder(
-        itemCount: _transactions.length,
-        itemBuilder: (context, index) {
-          final transaction = _transactions[index];
-          return ListTile(
-            title: Text(
-              '${transaction['category']} - ${transaction['amount']}',
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            const DrawerHeader(
+              decoration: BoxDecoration(color: Color(0xFF4A90E2)),
+              child: Text(
+                'Username',
+                style: TextStyle(color: Colors.white, fontSize: 20),
+              ),
             ),
-            subtitle: Text(transaction['mode']),
-          );
-        },
+            ListTile(
+              leading: const Icon(Icons.settings),
+              title: const Text('Settings'),
+              onTap: () {
+                Navigator.pop(context);
+                // Handle settings tap
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.info),
+              title: const Text('About'),
+              onTap: () {
+                Navigator.pop(context);
+                // Handle about tap
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: const Text('Logout'),
+              onTap: () async {
+                await _authService.logout();
+                Navigator.pushReplacementNamed(context, '/splash');
+              },
+            ),
+          ],
+        ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          showDialog(
-            context: context,
-            builder: (context) {
-              final amountController = TextEditingController();
-              final categoryController = TextEditingController();
-              final modeController = TextEditingController();
-
-              return AlertDialog(
-                title: const Text('Add Transaction'),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: amountController,
-                      decoration: const InputDecoration(labelText: 'Amount'),
-                    ),
-                    TextField(
-                      controller: categoryController,
-                      decoration: const InputDecoration(labelText: 'Category'),
-                    ),
-                    TextField(
-                      controller: modeController,
-                      decoration: const InputDecoration(labelText: 'Mode'),
-                    ),
-                  ],
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    child: const Text('Cancel'),
-                  ),
-                  ElevatedButton(
-                    onPressed: () async {
-                      final transactionData = {
-                        'amount':
-                            double.tryParse(amountController.text) ?? 0.0,
-                        'category': categoryController.text,
-                        'mode': modeController.text,
-                      };
-                      await _addTransaction(transactionData);
-                    },
-                    child: const Text('Add'),
-                  ),
-                ],
-              );
-            },
-          );
-        },
-        child: const Icon(Icons.add),
+      body: _pages[_selectedIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: _onTabTapped,
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: const Color(0xFF4A90E2),
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Dashboard"),
+          BottomNavigationBarItem(icon: Icon(Icons.event), label: "Analytics"),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.emoji_events),
+            label: "Leaderboard",
+          ),
+          BottomNavigationBarItem(icon: Icon(Icons.wallet), label: "Ledger"),
+        ],
       ),
     );
   }
